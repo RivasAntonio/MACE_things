@@ -80,8 +80,9 @@ def main(args):
     if num_atoms == 0:
         print("No valid configurations found.")
         return
-    # Shuffle configurations
-    #random.shuffle(all_configurations)
+    # Shuffle configurations if requested
+    if args.shuffle:
+        random.shuffle(all_configurations)
     # Split configurations into training, validation, and test sets
     num_train = int(num_atoms * train_ratio)
     num_validation = int(num_atoms * validation_ratio)
@@ -168,6 +169,11 @@ if __name__ == "__main__":
         type=int,
         default=123,
         help="Seed for randomness.",
+    )
+    parser.add_argument(
+        "--shuffle",
+        action="store_true",
+        help="Shuffle configurations before splitting (default: False).",
     )
 
     args = parser.parse_args()

@@ -67,12 +67,22 @@ def convert_stress(xyz_content, conversion_factor=-0.0006241509):
 
 def main():
     # Check if the correct number of arguments were provided
-    if len(sys.argv) != 2:
-        print("Usage: python convert_units.py input.xyz")
+    if len(sys.argv) < 2 or len(sys.argv) > 3:
+        print("Usage: python convert_units.py input.xyz [conversion_factor]")
         sys.exit(1)
     
     # Get the input filename from command line arguments
     input_file = sys.argv[1]
+    
+    # Get conversion factor if provided, else use default
+    if len(sys.argv) == 3:
+        try:
+            conversion_factor = float(sys.argv[2])
+        except ValueError:
+            print("Error: conversion_factor must be a float.")
+            sys.exit(1)
+    else:
+        conversion_factor = -0.0006241509
     
     # Generate output filename based on input filename
     input_basename = os.path.basename(input_file)
@@ -89,7 +99,7 @@ def main():
         
         # Convert the stress values with a progress bar
         with tqdm(total=len(atom_count_lines), desc="Converting stress values") as pbar:
-            converted_content = convert_stress(xyz_content)
+            converted_content = convert_stress(xyz_content, conversion_factor=conversion_factor)
             pbar.update(len(atom_count_lines))
         
         # Write the output to a new file
