@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import numpy as np
 import matplotlib.pyplot as plt
 from ase.io import read
@@ -22,7 +23,7 @@ def process_xyz_file(xyz_path):
         
         # Extract MACE-predicted energies per atom
         energy_pred = atoms.info.get("MACE_energy")
-        e_atom_pred.append(energy_ref / n_atoms)
+        e_atom_pred.append(energy_pred / n_atoms)
         
         # Extract reference forces
         forces_ref = atoms.arrays.get("REF_forces") 

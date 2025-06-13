@@ -64,141 +64,96 @@ def plot_training(eval_data, opt_by_epoch, min_epoch=0):
     else:
         epochs = list(range(min_epoch, min_epoch + len(eval_data)))
 
-    # --------------------------
-    # Energy-related metrics
-    # --------------------------
-    plt.figure(figsize=(14, 10))
-    plt.suptitle(f"Energy Metrics (from epoch {min_epoch})", y=1.02, fontsize=16)
-    
-    # MAE Energy
-    plt.subplot(2, 2, 1)
-    plt.plot(epochs, [d["mae_e"] for d in eval_data], 'b-o')
-    plt.title("MAE Energy (eV)")
-    plt.xlabel("Epochs")
-    plt.ylabel("MAE E (eV)")
-    plt.grid(True)
-    
-    # MAE Energy per atom
-    plt.subplot(2, 2, 2)
-    plt.plot(epochs, [d["mae_e_per_atom"] for d in eval_data], 'b-o')
-    plt.title("MAE Energy per Atom (eV/atom)")
-    plt.xlabel("Epochs")
-    plt.ylabel("MAE E (eV/atom)")
-    plt.grid(True)
-    
-    # RMSE Energy
-    plt.subplot(2, 2, 3)
-    plt.plot(epochs, [d["rmse_e"] for d in eval_data], 'r-o')
-    plt.title("RMSE Energy (eV)")
-    plt.xlabel("Epochs")
-    plt.ylabel("RMSE E (eV)")
-    plt.grid(True)
-    
-    # RMSE Energy per atom
-    plt.subplot(2, 2, 4)
-    plt.plot(epochs, [d["rmse_e_per_atom"] for d in eval_data], 'r-o')
-    plt.title("RMSE Energy per Atom (eV/atom)")
-    plt.xlabel("Epochs")
-    plt.ylabel("RMSE E (eV/atom)")
-    plt.grid(True)
-    
-    plt.tight_layout()
+    # --- Superfigura 1: Energía ---
+    fig_energy, axs_energy = plt.subplots(2, 2, figsize=(10, 10))
+    fig_energy.suptitle(f"Energy Metrics (from epoch {min_epoch})", y=1.02, fontsize=16)
+    axs_energy[0, 0].plot(epochs, [d["mae_e"] for d in eval_data], 'b-o')
+    axs_energy[0, 0].set_title("MAE Energy (eV)")
+    axs_energy[0, 0].set_xlabel("Epochs")
+    axs_energy[0, 0].set_ylabel("MAE E (eV)")
+    axs_energy[0, 0].grid(True)
+    axs_energy[0, 1].plot(epochs, [d["mae_e_per_atom"] for d in eval_data], 'b-o')
+    axs_energy[0, 1].set_title("MAE Energy per Atom (eV/atom)")
+    axs_energy[0, 1].set_xlabel("Epochs")
+    axs_energy[0, 1].set_ylabel("MAE E (eV/atom)")
+    axs_energy[0, 1].grid(True)
+    axs_energy[1, 0].plot(epochs, [d["rmse_e"] for d in eval_data], 'r-o')
+    axs_energy[1, 0].set_title("RMSE Energy (eV)")
+    axs_energy[1, 0].set_xlabel("Epochs")
+    axs_energy[1, 0].set_ylabel("RMSE E (eV)")
+    axs_energy[1, 0].grid(True)
+    axs_energy[1, 1].plot(epochs, [d["rmse_e_per_atom"] for d in eval_data], 'r-o')
+    axs_energy[1, 1].set_title("RMSE Energy per Atom (eV/atom)")
+    axs_energy[1, 1].set_xlabel("Epochs")
+    axs_energy[1, 1].set_ylabel("RMSE E (eV/atom)")
+    axs_energy[1, 1].grid(True)
+    fig_energy.tight_layout(rect=[0, 0, 1, 0.97])
     plt.show()
 
-    # --------------------------
-    # Force-related metrics
-    # --------------------------
-    plt.figure(figsize=(14, 10))
-    plt.suptitle(f"Force Metrics (from epoch {min_epoch})", y=1.02, fontsize=16)
-    
-    # MAE Forces
-    plt.subplot(2, 2, 1)
-    plt.plot(epochs, [d["mae_f"] for d in eval_data], 'g-o')
-    plt.title("MAE Forces (eV/Å)")
-    plt.xlabel("Epochs")
-    plt.ylabel("MAE F (eV/Å)")
-    plt.grid(True)
-    
-    # Relative MAE Forces
-    plt.subplot(2, 2, 2)
-    plt.plot(epochs, [d["rel_mae_f"] for d in eval_data], 'g-o')
-    plt.title("Relative MAE Forces (%)")
-    plt.xlabel("Epochs")
-    plt.ylabel("Relative MAE F (%)")
-    plt.grid(True)
-    
-    # RMSE Forces
-    plt.subplot(2, 2, 3)
-    plt.plot(epochs, [d["rmse_f"] for d in eval_data], 'm-o')
-    plt.title("RMSE Forces (eV/Å)")
-    plt.xlabel("Epochs")
-    plt.ylabel("RMSE F (eV/Å)")
-    plt.grid(True)
-    
-    # Relative RMSE Forces
-    plt.subplot(2, 2, 4)
-    plt.plot(epochs, [d["rel_rmse_f"] for d in eval_data], 'm-o')
-    plt.title("Relative RMSE Forces (%)")
-    plt.xlabel("Epochs")
-    plt.ylabel("Relative RMSE F (%)")
-    plt.grid(True)
-    
-    plt.tight_layout()
+    # --- Superfigura 2: Fuerzas ---
+    fig_forces, axs_forces = plt.subplots(2, 2, figsize=(10, 10))
+    fig_forces.suptitle(f"Force Metrics (from epoch {min_epoch})", y=1.02, fontsize=16)
+    axs_forces[0, 0].plot(epochs, [d["mae_f"] for d in eval_data], 'g-o')
+    axs_forces[0, 0].set_title("MAE Forces (eV/Å)")
+    axs_forces[0, 0].set_xlabel("Epochs")
+    axs_forces[0, 0].set_ylabel("MAE F (eV/Å)")
+    axs_forces[0, 0].grid(True)
+    axs_forces[0, 1].plot(epochs, [d["rel_mae_f"] for d in eval_data], 'g-o')
+    axs_forces[0, 1].set_title("Relative MAE Forces (%)")
+    axs_forces[0, 1].set_xlabel("Epochs")
+    axs_forces[0, 1].set_ylabel("Relative MAE F (%)")
+    axs_forces[0, 1].grid(True)
+    axs_forces[1, 0].plot(epochs, [d["rmse_f"] for d in eval_data], 'm-o')
+    axs_forces[1, 0].set_title("RMSE Forces (eV/Å)")
+    axs_forces[1, 0].set_xlabel("Epochs")
+    axs_forces[1, 0].set_ylabel("RMSE F (eV/Å)")
+    axs_forces[1, 0].grid(True)
+    axs_forces[1, 1].plot(epochs, [d["rel_rmse_f"] for d in eval_data], 'm-o')
+    axs_forces[1, 1].set_title("Relative RMSE Forces (%)")
+    axs_forces[1, 1].set_xlabel("Epochs")
+    axs_forces[1, 1].set_ylabel("Relative RMSE F (%)")
+    axs_forces[1, 1].grid(True)
+    fig_forces.tight_layout(rect=[0, 0, 1, 0.97])
     plt.show()
 
-    # --------------------------
-    # Additional metrics
-    # --------------------------
-    fig, axs = plt.subplots(1, 2, figsize=(12, 5))
-    plt.suptitle(f"Additional Metrics (from epoch {min_epoch})", y=1.05, fontsize=16)
-    
-    axs[0].plot(epochs, [d["q95_e"] for d in eval_data], 'c-o', label="Q95 E")
-    axs[0].set_title("95th Percentile Energy Error (eV)")
-    axs[0].set_xlabel("Epochs")
-    axs[0].set_ylabel("Q95 E (eV)")
-    axs[0].grid(True)
-    
-    axs[1].plot(epochs, [d["time"] for d in eval_data], 'k-o', label="Eval Time")
-    axs[1].set_title("Evaluation Time")
-    axs[1].set_xlabel("Epochs")
-    axs[1].set_ylabel("Time (s)")
-    axs[1].grid(True)
-    
-    plt.tight_layout()
+    # --- Superfigura 3: Métricas adicionales ---
+    fig_add, axs_add = plt.subplots(1, 2, figsize=(12, 5))
+    fig_add.suptitle(f"Additional Metrics (from epoch {min_epoch})", y=1.05, fontsize=16)
+    axs_add[0].plot(epochs, [d["q95_e"] for d in eval_data], 'c-o', label="Q95 E")
+    axs_add[0].set_title("95th Percentile Energy Error (eV)")
+    axs_add[0].set_xlabel("Epochs")
+    axs_add[0].set_ylabel("Q95 E (eV)")
+    axs_add[0].grid(True)
+    axs_add[1].plot(epochs, [d["time"] for d in eval_data], 'k-o', label="Eval Time")
+    axs_add[1].set_title("Evaluation Time")
+    axs_add[1].set_xlabel("Epochs")
+    axs_add[1].set_ylabel("Time (s)")
+    axs_add[1].grid(True)
+    fig_add.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
 
-    # --------------------------
-    # Optimization plots
-    # --------------------------
+    # --- Superfigura 4: Optimización ---
     if opt_by_epoch:
-        # Filter optimization data by min_epoch
         opt_epochs = sorted([e for e in opt_by_epoch.keys() if e >= min_epoch])
-        
         if opt_epochs:
             avg_loss_per_epoch = [np.mean([x["loss"] for x in opt_by_epoch[epoch]]) for epoch in opt_epochs]
             total_time_per_epoch = [np.sum([x["time"] for x in opt_by_epoch[epoch]]) for epoch in opt_epochs]
-            
-            # Plot optimization loss
-            plt.figure(figsize=(12, 5))
-            plt.plot(opt_epochs, avg_loss_per_epoch, 'r-o', label="Avg Loss")
-            plt.title(f"Optimization Loss (from epoch {min_epoch})")
-            plt.xlabel("Epochs")
-            plt.ylabel("Loss")
-            plt.yscale('log')
-            plt.grid(True)
-            plt.legend()
-            plt.tight_layout()
-            plt.show()
-            
-            # Plot optimization time
-            plt.figure(figsize=(12, 5))
-            plt.plot(opt_epochs, total_time_per_epoch, 'b-o', label="Total Time")
-            plt.title(f"Optimization Time (from epoch {min_epoch})")
-            plt.xlabel("Epochs")
-            plt.ylabel("Time (s)")
-            plt.grid(True)
-            plt.legend()
-            plt.tight_layout()
+            fig_opt, axs_opt = plt.subplots(1, 2, figsize=(14, 5))
+            fig_opt.suptitle(f"Optimization Metrics (from epoch {min_epoch})", y=1.05, fontsize=16)
+            axs_opt[0].plot(opt_epochs, avg_loss_per_epoch, 'r-o', label="Avg Loss")
+            axs_opt[0].set_title("Optimization Loss")
+            axs_opt[0].set_xlabel("Epochs")
+            axs_opt[0].set_ylabel("Loss")
+            axs_opt[0].set_yscale('log')
+            axs_opt[0].grid(True)
+            axs_opt[0].legend()
+            axs_opt[1].plot(opt_epochs, total_time_per_epoch, 'b-o', label="Total Time")
+            axs_opt[1].set_title("Optimization Time")
+            axs_opt[1].set_xlabel("Epochs")
+            axs_opt[1].set_ylabel("Time (s)")
+            axs_opt[1].grid(True)
+            axs_opt[1].legend()
+            fig_opt.tight_layout(rect=[0, 0, 1, 0.95])
             plt.show()
 
 if __name__ == "__main__":

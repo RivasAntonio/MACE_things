@@ -34,12 +34,16 @@ def main(args):
     vasp_files = []
     for root, dirs, files in os.walk(args.data_path):
         for file in files:
-            if file.endswith(".xml") or file.endswith(".h5"):
+            if args.file_type == "xml" and file.endswith("run.xml"):
+                vasp_files.append(os.path.join(root, file))
+            elif args.file_type == "OUTCAR" and file.endswith("OUTCAR"):
+                vasp_files.append(os.path.join(root, file))
+            elif args.file_type == "h5" and file.endswith("out.h5"):
                 vasp_files.append(os.path.join(root, file))
 
     # Check if any files were found
     if not vasp_files:
-        print(f"No .xml files found in the path '{args.data_path}'.")
+        print(f"No {args.file_type} files found in the path '{args.data_path}'.")
         return
     else:
         print(f"Detected files: {vasp_files}")
@@ -80,9 +84,8 @@ def main(args):
     if num_atoms == 0:
         print("No valid configurations found.")
         return
-    # Shuffle configurations if requested
-    if args.shuffle:
-        random.shuffle(all_configurations)
+    # Shuffle configurations
+    #random.shuffle(all_configurations)
     # Split configurations into training, validation, and test sets
     num_train = int(num_atoms * train_ratio)
     num_validation = int(num_atoms * validation_ratio)
@@ -171,9 +174,12 @@ if __name__ == "__main__":
         help="Seed for randomness.",
     )
     parser.add_argument(
-        "--shuffle",
-        action="store_true",
-        help="Shuffle configurations before splitting (default: False).",
+        "--file_type",
+        "-ft",
+        type=str,
+        choices=["xml", "OUTCAR", "h5"],
+        default="xml",
+        help="Type of VASP files to process.",
     )
 
     args = parser.parse_args()

@@ -17,49 +17,51 @@ def filter_extxyz_by_forces(input_file, max_force_threshold=100):
     """
     # Generar nombre de archivo de salida
     base_name, ext = os.path.splitext(input_file)
-    output_file = f"{base_name}.xyz"
+    output_file = f"{base_name}_filtered.xyz"
     
     # Contadores para estadísticas
     total_frames = 0
     kept_frames = 0
     
-    # Leer el archivo frame por frame (eficiente en memoria)
-    with open(output_file, 'w') as f_out:
-        for atoms in read(input_file, index=':', format='extxyz'):
-            total_frames += 1
-            
-            try:
-                forces = atoms.get_forces()
-            except AttributeError:
-                print(f"Advertencia: Frame {total_frames} no contiene fuerzas válidas. Descartado.")
-                continue
-
-            # Calcular norma de las fuerzas para cada átomo
-            force_magnitudes = np.linalg.norm(forces, axis=1)
-            max_force = np.max(force_magnitudes)
-            
-            # Escribir solo si pasa el filtro
-            if max_force <= max_force_threshold:
-                if kept_frames == 0:
-                    # Primer frame - escribir con formato completo
-                    write(f_out, atoms, format='extxyz')
-                else:
-                    # Frames subsiguientes - modo append
-                    write(f_out, atoms, format='extxyz', append=True)
-                kept_frames += 1
+    print(f"Procesando {input_file} con umbral {max_force_threshold} eV/Å...")
+    
+    # Lista para almacenar frames válidos
+    valid_frames = []
+    
+    # Leer el archivo frame por frame
+    for atoms in read(input_file, index=':'):
+        total_frames += 1
+        
+        # Buscar 'REF_forces' o 'forces' en los arrays del átomo
+        if 'REF_forces' in atoms.arrays:
+            forces = atoms.get_array('REF_forces')
+        elif 'forces' in atoms.arrays:
+            forces = atoms.get_array('forces')
+        else:
+            continue
+        
+        # Calcular norma de las fuerzas para cada átomo
+        force_magnitudes = np.linalg.norm(forces, axis=1)
+        max_force = np.max(force_magnitudes)
+        
+        # Conservar solo si pasa el filtro
+        if max_force <= max_force_threshold:
+            valid_frames.append(atoms)
+            kept_frames += 1
+    
+    # Escribir frames válidos al archivo de salida
+    if valid_frames:
+        for i, atoms in enumerate(valid_frames):
+            if i == 0:
+                write(output_file, atoms, format='extxyz')
             else:
-                print(f"Descartado frame {total_frames}: Fuerza máxima = {max_force:.2f} eV/Å")
+                write(output_file, atoms, format='extxyz', append=True)
     
     # Reporte final
-    print("\n" + "="*50)
-    print(f"Proceso completado:")
-    print(f"Archivo de entrada: {input_file}")
-    print(f"Archivo filtrado: {output_file}")
-    print(f"Umbral de fuerza: {max_force_threshold} eV/Å")
     print(f"Frames totales: {total_frames}")
-    print(f"Frames conservados: {kept_frames} ({kept_frames/total_frames:.1%})")
+    print(f"Frames conservados: {kept_frames}")
     print(f"Frames descartados: {total_frames - kept_frames}")
-    print("="*50)
+    print(f"Archivo filtrado: {output_file}")
     
     return output_file
 

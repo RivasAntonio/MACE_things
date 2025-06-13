@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import sys
 
 def extraer_elementos_xyz(ruta_archivo):
