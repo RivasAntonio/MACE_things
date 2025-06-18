@@ -1,7 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 import sys
 from ase.io import read, write
 import numpy as np
 import os
+from tqdm import tqdm
 
 def filter_extxyz_by_forces(input_file, max_force_threshold=100):
     """
@@ -29,16 +32,11 @@ def filter_extxyz_by_forces(input_file, max_force_threshold=100):
     valid_frames = []
     
     # Leer el archivo frame por frame
-    for atoms in read(input_file, index=':'):
+    structures = read(input_file, index=':')
+    for atoms in tqdm(structures, desc="Procesando frames"):
         total_frames += 1
-        
-        # Buscar 'REF_forces' o 'forces' en los arrays del átomo
-        if 'REF_forces' in atoms.arrays:
-            forces = atoms.get_array('REF_forces')
-        elif 'forces' in atoms.arrays:
-            forces = atoms.get_array('forces')
-        else:
-            continue
+
+        forces = atoms.get_forces() 
         
         # Calcular norma de las fuerzas para cada átomo
         force_magnitudes = np.linalg.norm(forces, axis=1)
