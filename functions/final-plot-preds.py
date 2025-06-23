@@ -20,6 +20,7 @@ from ase import Atoms
 from typing import List, Dict, Optional
 import os
 import sys
+from sklearn.metrics import r2_score
 
 
 class XYZComparator:
@@ -116,11 +117,8 @@ class XYZComparator:
         return results
     
     def _calculate_r2(self, y_true, y_pred):
-        """Calculate R² (coefficient of determination)."""
-        ss_res = np.sum((y_true - y_pred) ** 2)
-        ss_tot = np.sum((y_true - np.mean(y_true)) ** 2)
-        r2 = 1 - (ss_res / ss_tot)
-        return r2
+        """Calculate R² (coefficient of determination) using sklearn."""
+        return r2_score(y_true, y_pred)
     
     def compare_xyz_files(
         self,
