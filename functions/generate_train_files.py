@@ -97,44 +97,35 @@ def main(args):
     print(f"Validation set size: {len(atoms_validation)}")
     print(f"Test set size: {len(atoms_test)}")
 
-    # Summary of results
-    f = open(os.path.join(save_dir, "summary.txt"), "w")
-    f.write(f"Total configurations processed: {num_atoms}\n")
-    f.write(f"Configurations in the training set: {len(atoms_train)}\n")
-    f.write(f"Configurations in the validation set: {len(atoms_validation)}\n")
-    f.write(f"Configurations in the test set: {len(atoms_test)}\n")
-    f.close()
+    # Summary of results (only console output)
     print(f"Total configurations processed: {num_atoms}")
     print(f"Configurations in the training set: {len(atoms_train)}")
     print(f"Configurations in the validation set: {len(atoms_validation)}")
     print(f"Configurations in the test set: {len(atoms_test)}")
 
-    # Save results to files (if necessary)
+    # Save results to file
     if num_atoms > 0:
-        train_file = os.path.join(save_dir, "train.extxyz")
-        validation_file = os.path.join(save_dir, "validation.extxyz")
-        test_file = os.path.join(save_dir, "test.extxyz")
+        # Write a single dataset.xyz file with train, validation and test data in that order
+        dataset_file = os.path.join(save_dir, "dataset.xyz")
+        with open(dataset_file, "w") as fout:
+            for atoms in atoms_train + atoms_validation + atoms_test:
+                write(fout, atoms, format="extxyz")
+        print(f"Dataset file saved as '{dataset_file}'.")
 
-        write(train_file, atoms_train, format="extxyz")
-        write(validation_file, atoms_validation, format="extxyz")
-        write(test_file, atoms_test, format="extxyz")
-
-        print(f"Sets saved in '{save_dir}'.")
-
-        # Cambiar etiquetas en los archivos generados
+        # Change labels in the generated file
         def relabel_atoms_file(input_file):
             sed_cmd = [
                 'sed', '-i',
                 '-e', 's/forces/REF_forces/g',
                 '-e', 's/stress/REF_stress/g',
-                '-e', 's/ energy/ REF_energy/g',  # Para no cambiar free_energy
+                '-e', 's/ eatom/ REF_eatom/g',  # Energy per atom
+                '-e', 's/ toten/ REF_toten/g',  # Total energy
                 input_file
             ]
             subprocess.run(sed_cmd, check=True)
 
-        for f in [train_file, validation_file, test_file]:
-            relabel_atoms_file(f)
-        print("Etiquetas cambiadas a REF_energy, REF_stress y REF_forces en los archivos de salida.")
+        relabel_atoms_file(dataset_file)
+        print("Labels changed to REF_eatom, REF_toten, REF_stress and REF_forces in the output file.")
 
 
 if __name__ == "__main__":
@@ -143,14 +134,14 @@ if __name__ == "__main__":
         "--data_path",
         "-dp",
         type=str,
-        required=True,
+        default='.',
         help="Path to the directory containing VASP XML files.",
     )
     parser.add_argument(
         "--save_path",
         "-sp",
         type=str,
-        required=True,
+        default='.',
         help="Path to save the processed data.",
     )
     parser.add_argument(

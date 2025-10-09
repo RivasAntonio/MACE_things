@@ -1,353 +1,367 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+Script to filter atomic configurations based on different properties.
+Can filter by energy per atom, total energy, forces, and stress.
+"""
 import sys
 from ase.io import read, write
 import numpy as np
 import os
+from tqdm import tqdm
+
 
 def write_filtered_frames(output_file, valid_frames):
     """
-    Función auxiliar para escribir frames filtrados a un archivo.
+    Helper function to write filtered frames to a file.
     
     Args:
-        output_file (str): Ruta del archivo de salida
-        valid_frames (list): Lista de frames válidos
+        output_file (str): Path to output file
+        valid_frames (list): List of valid frames
     """
+    if not valid_frames:
+        return False
+        
     with open(output_file, 'w') as f_out:
-        for i, atoms in enumerate(valid_frames):
+        for i, atoms in enumerate(tqdm(valid_frames, desc="Writing frames", unit="frame")):
             if i == 0:
                 write(f_out, atoms, format='extxyz')
             else:
                 write(f_out, atoms, format='extxyz', append=True)
+    return True
+
 
 def print_statistics(property_name, input_file, output_file, threshold, 
                     total_frames, kept_frames, units, extra_info=None):
     """
-    Función auxiliar para imprimir estadísticas de filtrado.
+    Helper function to print filtering statistics.
     
     Args:
-        property_name (str): Nombre de la propiedad filtrada
-        input_file (str): Archivo de entrada
-        output_file (str): Archivo de salida
-        threshold (float): Umbral usado
-        total_frames (int): Total de frames procesados
-        kept_frames (int): Frames conservados
-        units (str): Unidades de la propiedad
-        extra_info (dict): Información adicional específica por propiedad
+        property_name (str): Name of the filtered property
+        input_file (str): Input file path
+        output_file (str): Output file path
+        threshold (float): Threshold used
+        total_frames (int): Total processed frames
+        kept_frames (int): Frames kept after filtering
+        units (str): Property units
+        extra_info (dict): Additional property-specific information
     """
     print(f"\n{'='*50}")
     print(f"{property_name.upper()} FILTERING STATISTICS")
     print("="*50)
     
     if extra_info:
-        # Para energía - mostrar información adicional
         print(f"Total configurations read: {total_frames}")
-        print(f"Configurations below threshold ({threshold} {units}): {extra_info['below']}")
-        print(f"Configurations above threshold ({threshold} {units}): {extra_info['above']}")
-        print(f"Largest group saved: {extra_info['group_type']} threshold")
+        # Only show if keys exist (energy case)
+        if 'below' in extra_info:
+            print(f"Configurations below threshold ({threshold} {units}): {extra_info['below']}")
+        if 'above' in extra_info:
+            print(f"Configurations above threshold ({threshold} {units}): {extra_info['above']}")
+        if 'group_type' in extra_info:
+            print(f"Largest group saved: {extra_info['group_type']} threshold")
         print(f"✓ Main file saved: {output_file}")
         print(f"Total configurations saved: {kept_frames}")
-        
-        # Mostrar información sobre el archivo descartado
+        # Show information about discarded file
         if extra_info.get('discarded_filename'):
             print(f"✓ Discarded file saved: {extra_info['discarded_filename']}")
-            print(f"Discarded configurations ({extra_info['discarded_type']} threshold): {extra_info['discarded_count']}")
+            print(f"Discarded configurations ({extra_info.get('discarded_type', 'above')} threshold): {extra_info['discarded_count']}")
         else:
             print("✗ No discarded configurations to save")
     else:
-        # Para fuerzas y stress
-        print(f"Archivo de entrada: {input_file}")
+        # For forces and stress
+        print(f"Input file: {input_file}")
         if output_file:
-            print(f"Archivo filtrado: {output_file}")
+            print(f"Filtered file: {output_file}")
         else:
-            print("No se creó archivo de salida (ningún frame válido)")
-        print(f"Umbral de {property_name.lower()}: {threshold} {units}")
-        print(f"Frames totales: {total_frames}")
-        print(f"Frames conservados: {kept_frames} ({kept_frames/total_frames:.1%})" if total_frames > 0 else "Frames conservados: 0")
-        print(f"Frames descartados: {total_frames - kept_frames}")
+            print("No output file created (no valid frames)")
+        print(f"{property_name.lower()} threshold: {threshold} {units}")
+        print(f"Total frames: {total_frames}")
+        print(f"Frames kept: {kept_frames} ({kept_frames/total_frames:.4%})" if total_frames > 0 else "Frames kept: 0")
+        print(f"Frames discarded: {total_frames - kept_frames}")
     
     print("="*50)
 
-def filter_by_property(input_file, threshold, property_type):
+
+def filter_property(input_file, threshold, property_config):
     """
-    Función genérica para filtrar por fuerzas o stress.
+    Generalized function to filter by any property.
     
     Args:
-        input_file (str): Archivo de entrada
-        threshold (float): Umbral máximo
-        property_type (str): 'forces' o 'stress'
+        input_file (str): Input file path
+        threshold (float): Property threshold
+        property_config (dict): Configuration for the property to filter
     
     Returns:
-        str: Archivo de salida generado
+        str: Path to the generated output file
     """
-    # Configuración específica por propiedad
-    config = {
-        'forces': {
-            'suffix': '-forces-filtered.xyz',
-            'getter': lambda atoms: atoms.get_forces(),
-            'units': 'eV/Å',
-            'name': 'fuerza',
-            'property_name': 'forces'
-        },
-        'stress': {
-            'suffix': '-stress-filtered.xyz',
-            'getter': lambda atoms: atoms.get_stress(),
-            'units': 'eV/Å³',
-            'name': 'stress',
-            'property_name': 'stress'
-        }
-    }
-    
-    prop_config = config[property_type]
-    
-    # Generar nombre de archivo de salida
     base_name, ext = os.path.splitext(input_file)
-    output_file = f"{base_name}{prop_config['suffix']}"
+    output_file = f"{base_name}{property_config['suffix']}"
     
-    # Contadores para estadísticas
-    total_frames = 0
-    kept_frames = 0
-    valid_frames = []
+    # Initialize variables
+    print(f"Reading data from {input_file}...")
+    data = read(input_file, index=':', format='extxyz')
+    total_frames = len(data)
+    print(f"Processing {total_frames} frames...")
     
-    # Leer el archivo frame por frame
-    for atoms in read(input_file, index=':', format='extxyz'):
-        total_frames += 1
-        
+    # Separate configurations based on filtering type
+    below_threshold = []
+    above_threshold = []
+    
+    for i, atoms in enumerate(tqdm(data, desc=f"Filtering by {property_config['display_name']}", unit="frame")):
         try:
-            property_data = prop_config['getter'](atoms)
-        except AttributeError:
-            print(f"Advertencia: Frame {total_frames} no contiene {prop_config['name']} válidas. Descartado.")
-            continue
-
-        # Calcular norma total
-        total_norm = np.linalg.norm(property_data)
-        
-        # Agregar a la lista si pasa el filtro
-        if total_norm <= threshold:
-            valid_frames.append(atoms)
-            kept_frames += 1
-        else:
-            print(f"Descartado frame {total_frames}: Norma total de {prop_config['name']} = {total_norm:.2f} {prop_config['units']}")
+            # Get property value
+            if 'norm_calc' in property_config:
+                # For properties requiring norm calculation (forces, stress)
+                property_value = property_config['getter'](atoms)
+                value = property_config['norm_calc'](property_value)
+                
+                if value <= threshold:
+                    below_threshold.append(atoms)
+                else:
+                    above_threshold.append(atoms)
+            else:
+                # For energy (per atom or total)
+                property_value = property_config['getter'](atoms)
+                
+                if property_value < threshold:
+                    below_threshold.append(atoms)
+                else:
+                    above_threshold.append(atoms)
+        except (AttributeError, KeyError) as e:
+            # Decide where to put the frame if attribute is missing
+            if property_config.get('on_error_group', 'discard') == 'above':
+                above_threshold.append(atoms)
+            else:
+                # By default, discard
+                pass
     
-    # Crear archivo de salida si hay frames válidos
-    if kept_frames > 0:
-        write_filtered_frames(output_file, valid_frames)
-    else:
-        print(f"No se encontraron frames válidos. No se creará archivo de salida.")
-        output_file = None
-    
-    # Mostrar estadísticas
-    print_statistics(prop_config['property_name'], input_file, output_file, threshold, 
-                    total_frames, kept_frames, prop_config['units'])
-    
-    return output_file
-
-def filter_by_energy(xyz_file, energy_threshold):
-    """
-    Filtra configuraciones por energía por átomo y guarda el grupo más grande.
-    
-    Args:
-        xyz_file (str): Ruta al archivo .xyz de entrada
-        energy_threshold (float): Umbral de energía por átomo (eV/átomo)
-    
-    Returns:
-        str: Ruta al archivo de salida generado
-    """
-    # Leer el archivo .xyz
-    data = read(xyz_file, index=':')
-    base_name, ext = os.path.splitext(xyz_file)
-    
-    # Separar configuraciones por energía
-    below_threshold = []
-    above_threshold = []
-    
-    for atoms in data:
-        energy_per_atom = atoms.get_potential_energy() / len(atoms)
-        if energy_per_atom < energy_threshold:
-            below_threshold.append(atoms)
-        else:
-            above_threshold.append(atoms)
-    
-    # Determinar el conjunto más grande
-    if len(below_threshold) > len(above_threshold):
-        largest_set = below_threshold
-        group_type = "Below"
-    else:
-        largest_set = above_threshold
-        group_type = "Above"
-    
-    # Guardar el conjunto más grande en un archivo .xyz
-    output_filename = f'{base_name}-energy-filtered.xyz'
-    write(output_filename, largest_set)
-    
-def filter_by_energy(xyz_file, energy_threshold):
-    """
-    Filtra configuraciones por energía por átomo y guarda el grupo más grande.
-    También guarda el grupo descartado en un archivo separado.
-    
-    Args:
-        xyz_file (str): Ruta al archivo .xyz de entrada
-        energy_threshold (float): Umbral de energía por átomo (eV/átomo)
-    
-    Returns:
-        str: Ruta al archivo de salida principal (grupo más grande)
-    """
-    # Leer el archivo .xyz
-    data = read(xyz_file, index=':')
-    base_name, ext = os.path.splitext(xyz_file)
-    
-    # Separar configuraciones por energía
-    below_threshold = []
-    above_threshold = []
-    
-    for atoms in data:
-        energy_per_atom = atoms.get_potential_energy() / len(atoms)
-        if energy_per_atom < energy_threshold:
-            below_threshold.append(atoms)
-        else:
-            above_threshold.append(atoms)
-    
-    # Determinar el conjunto más grande y el descartado
-    if len(below_threshold) > len(above_threshold):
-        largest_set = below_threshold
+    # Determine sets to save based on filtering strategy
+    if property_config['strategy'] == 'below_threshold':
+        main_set = below_threshold
         discarded_set = above_threshold
         group_type = "Below"
         discarded_type = "Above"
+    elif property_config['strategy'] == 'largest_group':
+        if len(below_threshold) >= len(above_threshold):
+            main_set = below_threshold
+            discarded_set = above_threshold
+            group_type = "Below"
+            discarded_type = "Above"
+        else:
+            main_set = above_threshold
+            discarded_set = below_threshold
+            group_type = "Above"
+            discarded_type = "Below"
     else:
-        largest_set = above_threshold
-        discarded_set = below_threshold
-        group_type = "Above"
-        discarded_type = "Below"
+        raise ValueError(f"Unknown filtering strategy: {property_config['strategy']}")
     
-    # Guardar el conjunto más grande en un archivo .xyz
-    output_filename = f'{base_name}-energy-filtered.xyz'
-    write(output_filename, largest_set)
+    # Save main set
+    if main_set:
+        print(f"Saving {len(main_set)} configurations to {output_file}...")
+        write(output_file, main_set)
+    else:
+        output_file = None
     
-    # Guardar el conjunto descartado si no está vacío
+    # Save discarded set if needed
     discarded_filename = None
-    if len(discarded_set) > 0:
-        discarded_filename = f'{base_name}-energy-discarded.xyz'
+    if discarded_set and property_config.get('save_discarded', True):
+        discarded_filename = f"{base_name}-{property_config['discard_suffix']}"
+        print(f"Saving {len(discarded_set)} discarded configurations to {discarded_filename}...")
         write(discarded_filename, discarded_set)
     
-    # Mostrar estadísticas usando la función auxiliar
+    # Prepare extra info for statistics
     extra_info = {
         'below': len(below_threshold),
         'above': len(above_threshold),
         'group_type': group_type,
         'discarded_filename': discarded_filename,
         'discarded_type': discarded_type,
-        'discarded_count': len(discarded_set)
+        'discarded_count': len(discarded_set) if discarded_set else 0
     }
     
-    print_statistics("energy", xyz_file, output_filename, energy_threshold, 
-                    len(data), len(largest_set), "eV/atom", extra_info)
+    # Show statistics
+    print_statistics(
+        property_config['display_name'],
+        input_file,
+        output_file,
+        threshold,
+        total_frames,
+        len(main_set),
+        property_config['units'],
+        extra_info
+    )
     
-    return output_filename
+    return output_file
 
-def filter_by_forces(input_file, max_force_threshold):
-    """Filtra frames por norma total de fuerzas."""
-    return filter_by_property(input_file, max_force_threshold, 'forces')
 
-def filter_by_stress(input_file, max_stress_threshold):
-    """Filtra frames por norma total de stress."""
-    return filter_by_property(input_file, max_stress_threshold, 'stress')
+def filter_by_property(input_file, threshold, property_type, save_discarded=False):
+    """
+    Unified function to filter by any property type.
+    
+    Args:
+        input_file (str): Input file path
+        threshold (float): Property threshold
+        property_type (str): Type of property ('energy', 'totalenergy', 'forces', 'stress')
+        save_discarded (bool): Whether to save discarded frames (default: False)
+    
+    Returns:
+        str: Path to the generated output file
+    """
+    # Dictionary with configurations for all property types
+    property_configs = {
+        'eatom': {
+            'suffix': '-eatom-filtered.xyz',
+            'discard_suffix': 'eatom_discarded.xyz',
+            'getter': lambda atoms: atoms.get_potential_energy() / len(atoms),
+            'units': 'eV/atom',
+            'name': 'energy per atom',
+            'display_name': 'energy per atom',
+            'strategy': 'largest_group',
+            'verbose': False,
+            'save_discarded': False,
+            'on_error_group': 'discard'
+        },
+        'toten': {
+            'suffix': '-toten-filtered.xyz',
+            'discard_suffix': 'toten_discarded.xyz',
+            'getter': lambda atoms: atoms.get_potential_energy(),
+            'units': 'eV',
+            'name': 'total energy',
+            'display_name': 'total energy',
+            'strategy': 'largest_group',
+            'verbose': False,
+            'save_discarded': False,
+            'on_error_group': 'discard'
+        },
+        'forces': {
+            'suffix': '-forces-filtered.xyz',
+            'discard_suffix': 'forces_discarded.xyz',
+            'getter': lambda atoms: atoms.get_forces(),
+            'norm_calc': lambda x: np.linalg.norm(x),
+            'units': 'eV/Å',
+            'name': 'force',
+            'display_name': 'forces',
+            'strategy': 'below_threshold',
+            'verbose': True,
+            'save_discarded': False,
+            'on_error_group': 'discard'
+        },
+        'stress': {
+            'suffix': '-stress-filtered.xyz',
+            'discard_suffix': 'stress_discarded.xyz',
+            'getter': lambda atoms: atoms.get_stress(),
+            'norm_calc': lambda x: np.linalg.norm(x),
+            'units': 'eV/Å³',
+            'name': 'stress',
+            'display_name': 'stress',
+            'strategy': 'below_threshold',
+            'verbose': True,
+            'save_discarded': False,
+            'on_error_group': 'discard'
+        }
+    }
+    
+    if property_type not in property_configs:
+        raise ValueError(f"Unknown property type: {property_type}")
+    
+    # Apply save_discarded parameter
+    config = property_configs[property_type].copy()  # Create a copy to avoid modifying the original
+    config['save_discarded'] = save_discarded
+    
+    return filter_property(input_file, threshold, config)
+
 
 def show_help():
-    """Muestra el mensaje de ayuda."""
-    print("="*80)
-    print("                    UNIFIED PROPERTIES FILTER FOR XYZ FILES")
-    print("="*80)
-    print()
+    """Show help message."""
+    print("="*60)
+    print("              PROPERTIES FILTER FOR XYZ FILES")
+    print("="*60)
     print("DESCRIPTION:")
-    print("  This script filters atomic configurations from XYZ files based on different")
-    print("  properties: energy, forces, or stress. Choose the property type and")
-    print("  specify the threshold value.")
+    print("  Filters atomic configurations by energy, forces, or stress.")
     print()
     print("USAGE:")
-    print("  python filter_properties.py <property_type> <threshold> <file.xyz>")
+    print("  python filter_properties.py <property_type> <threshold> <file.xyz> [--save-discarded]")
     print()
     print("PROPERTY TYPES:")
-    print("  energy      Filter by energy per atom (eV/atom)")
-    print("  forces      Filter by total force norm (eV/Å)")
-    print("  stress    Filter by total stress norm (eV/Å³)")
+    print("  eatom        - Filter by energy per atom (eV/atom)")
+    print("  toten        - Filter by total energy (eV)")
+    print("  forces       - Filter by total force norm (eV/Å)")
+    print("  stress       - Filter by total stress norm (eV/Å³)")
     print()
-    print("ARGUMENTS:")
-    print("  property_type       Type of property to filter (energy/forces/stress)")
-    print("  threshold           Threshold value for the selected property")
-    print("  file.xyz            Input XYZ file with atomic configurations")
+    print("OPTIONS:")
+    print("  --save-discarded, -sd  Save discarded frames to a separate file")
     print()
     print("EXAMPLES:")
-    print("  python filter_properties.py energy -2.5 configurations.xyz")
-    print("  python filter_properties.py forces 100 trajectory.extxyz")
-    print("  python filter_properties.py stress 50 md_data.extxyz")
+    print("  python filter_properties.py eatom -2.5 configurations.xyz")
+    print("  python filter_properties.py forces 100 trajectory.extxyz --save-discarded")
     print()
-    print("OUTPUT:")
-    print("  - Energy: <original_name>-energy-filtered.xyz (largest group)")
-    print("            <original_name>-energy-discarded.xyz (discarded group)")
-    print("  - Forces: <original_name>-forces-filtered.xyz (below threshold)")
-    print("  - stress: <original_name>-stress-filtered.xyz (below threshold)")
-    print("  - Statistical information displayed on screen")
+    print("OUTPUTS:")
+    print("  Filtered configurations are saved to a new file based on the property and threshold.")
+    print("  Discarded frames are saved only when --save-discarded option is used.")
     print()
     print("NOTES:")
-    print("  • Energy filtering saves the largest group (above or below threshold)")
-    print("    and also saves the discarded group in a separate file")
-    print("  • Forces and stress filtering save frames below the threshold")
-    print("  • Files must contain the corresponding property information")
-    print("  • Compatible with XYZ files generated by ASE, VASP, CP2K, etc.")
-    print()
-    print("="*80)
+    print("  • Energy filtering saves the largest group (above/below threshold)")
+    print("  • Forces/stress filtering keeps frames below threshold")
+    print("  • Compatible with XYZ files from ASE, VASP, CP2K, etc.")
+    print("="*60)
+
 
 def parse_arguments():
-    """Parsea y valida los argumentos de línea de comandos."""
+    """Parse and validate command line arguments."""
+    if len(sys.argv) < 4:
+        return None, None, None, False
+        
     property_type = sys.argv[1].lower()
     
     try:
         threshold = float(sys.argv[2])
     except ValueError:
-        print("Error: El umbral debe ser un número")
+        print("Error: Threshold must be a number")
         sys.exit(1)
     
     input_file = sys.argv[3]
     
     if not os.path.isfile(input_file):
-        print(f"Error: El archivo {input_file} no existe")
+        print(f"Error: File {input_file} does not exist")
         sys.exit(1)
     
-    return property_type, threshold, input_file
+    # Check for save_discarded flag
+    save_discarded = False
+    if len(sys.argv) > 4 and sys.argv[4].lower() in ["--save-discarded", "-sd"]:
+        save_discarded = True
+    
+    return property_type, threshold, input_file, save_discarded
+
 
 def main():
     # Check arguments and show help
-    if len(sys.argv) < 4 or sys.argv[1] in ['--help', '-h', '--helop']:
+    if len(sys.argv) < 4 or sys.argv[1] in ['--help', '-h', '--help']:
         show_help()
         sys.exit(1)
     
     # Parse and validate arguments
-    property_type, threshold, input_file = parse_arguments()
+    property_type, threshold, input_file, save_discarded = parse_arguments()
     
-    # Property configuration
-    filters = {
-        "energy": lambda f, t: filter_by_energy(f, t),
-        "forces": lambda f, t: filter_by_forces(f, t),
-        "stress": lambda f, t: filter_by_stress(f, t)
+    # Property configuration and units
+    property_types = {
+        "eatom": {"units": "eV/atom"},
+        "toten": {"units": "eV"},
+        "forces": {"units": "eV/Å"},
+        "stress": {"units": "eV/Å³"}
     }
     
-    units = {"energy": "eV/atom", "forces": "eV/Å", "stress": "eV/Å³"}
-    
     # Execute filter
-    if property_type not in filters:
-        print(f"Error: Tipo de propiedad '{property_type}' no reconocido.")
-        print("Tipos válidos: energy, forces, stress")
+    if property_type not in property_types:
+        print(f"Error: Property type '{property_type}' not recognized.")
+        print("Valid types: eatom, toten, forces, stress")
         sys.exit(1)
     
-    print(f"\nFiltrando por {property_type} con umbral: {threshold} {units[property_type]}")
-    output_file = filters[property_type](input_file, threshold)
+    output_file = filter_by_property(input_file, threshold, property_type, save_discarded)
     
     # Final message
-    if output_file:
-        print(f"\n🎉 Filtrado completado exitosamente!")
-        print(f"Archivo de salida: {output_file}")
-    else:
-        print(f"\n❌ No se pudo crear archivo de salida.")
+    if not output_file:
+        print(f"\n❌ Could not create output file.")
+
 
 if __name__ == "__main__":
     main()
