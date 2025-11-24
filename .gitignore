@@ -1,0 +1,8 @@
+*OUTCAR
+*traj
+*.extxyz
+selected*xyz
+train*xyz
+validation*xyz
+test*xyz
+*.h5

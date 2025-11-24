@@ -1,0 +1,21 @@
+! Cálculo de energía total sin relajación
+ISTART = 0
+ICHARG = 2
+
+NSW = 0
+IBRION = -1
+ISIF = 2
+
+EDIFF = 1E-6
+ENCUT = 600
+
+ISPIN = 2
+MAGMOM = 48*0 96*0
+
+METAGGA = r2SCAN
+LASPH = .TRUE.
+ALGO = All
+PREC = Accurate
+
+LREAL = Auto
+

@@ -1,0 +1,12 @@
+train_file : "train.xyz"
+valid_file : "validation.xyz"
+h5_prefix : "processed_data/"
+compute_statistics : True
+seed : 123
+E0s : { 8: -2.39669218, 14: -3.86610158 }
+atomic_numbers : "[8, 14]"
+r_max : 6
+num_process: 1 
+energy_key : "REF_energy"
+forces_key : "REF_forces"
+stress_key : "REF_stress"

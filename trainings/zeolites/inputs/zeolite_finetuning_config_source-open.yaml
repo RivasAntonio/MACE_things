@@ -1,0 +1,59 @@
+# ====================== NAME ======================
+name: 'zeolite-mh-finetuning-open'                                  # Name of the zeolite fine-tuning experiment
+
+# ====================== DATA ======================
+train_file: './inputs/processed_data_open/train/'                    # Training dataset file path
+valid_file: './inputs/processed_data_open/val/'                      # Validation dataset file path
+test_dir: './inputs/processed_data_open/test/'                       # Test data directory
+statistics_file: "./inputs/processed_data_open/statistics.json"     # Data normalization statistics file
+pt_train_file: "./inputs/processed_data_open/selected-zeolites.xyz" # Selected zeolites data for pre-training
+foundation_model: "mace-matpes-r2scan-0"                       # Pre-trained MACE foundation model
+
+# ====================== OUTPUT ======================
+checkpoints_dir: './outputs/checkpoints'                       # Directory to save model checkpoints
+results_dir: './outputs/results'                               # Directory for evaluation results
+log_dir: './outputs/logs'                                      # Directory for training logs
+model_dir: './outputs/models'                                  # Directory to save final model
+
+# ====================== HYPERPARAMETERS ======================
+r_max: 6.0                                                      # Maximum cutoff radius - zeolites have large cavities
+batch_size: 16                                                  # Reduced batch size - large systems (182 atoms) + limited data
+ema: True                                                       # Enable Exponential Moving Average for training stability
+ema_decay: 0.99999                                                # Decay factor for EMA
+lr: 0.0001                                                      # Lower learning rate - large systems converge slower
+energy_weight: 1.0                                              # High weight - energies critical for phase stability
+compute_forces: True                                            # Compute and train with atomic forces
+forces_weight: 100.0                                             # Lower weight - less critical for minimizations
+compute_stress: True                                            # Compute and train with stress tensor
+stress_weight: 10.0                                              # Standard weight for stress loss
+default_dtype: "float64"                                        # High precision for accurate energies
+
+# ====================== TRAINING CONTROL ======================
+max_num_epochs: 10                                              # Increased epochs - V100 allows faster training
+restart_latest: True                                            # Restart from latest available checkpoint
+seed: 123                                                       # Seed for reproducibility
+device: 'cuda'                                                  # Computing device (GPU)
+
+# ====================== ADVANCED OPTIONS ======================
+multiheads_finetuning: True                                     # Essential - prevents overfitting with small dataset
+force_mh_ft_lr: True                                            # Force specific learning rate for multiheads
+enable_cueq: True                                               # Enable continuity equations for optimization speed
+plot : True                                                     # Enable plotting of training metrics
+plot_frequency : 1                                              # Frequency of plotting training metrics
+# ===================== MULTIHEADS ======================
+config_type_weights : '{"Default": 10.0}'
+heads:
+#  Default:                                                      # Main head for target zeolite data
+#    train_file: './inputs/processed_data_open/train/'                # Specific training data
+#    E0s: './inputs/processed_data_open/e0s.json'                    # Atomic reference energies
+#    energy_key: 'REF_energy'                                   # Key for reference energies
+#    forces_key: 'REF_forces'                                   # Key for reference forces
+#    stress_key: 'REF_stress'                                   # Key for reference stress
+
+  pt_head:                                                      # Head for foundation model data
+    train_file: './inputs/processed_data_open/selected-zeolites.xyz' # Selected zeolites data
+    E0s: 'foundation'                                           # Use foundation model energies
+    energy_key: 'MATPES_energy'                                # Key for MATPES energies
+    forces_key: 'MATPES_forces'                                # Key for MATPES forces
+    stress_key: 'MATPES_stress'                                # Key for MATPES stress
+
