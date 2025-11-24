@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/997232519.svg)](https://doi.org/10.5281/zenodo.17699011)
+
 # MACE Workflow
 
 A research repository for **MACE** machine learning force fields applied to zeolite and perovskite materials.
