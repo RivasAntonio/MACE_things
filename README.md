@@ -1,4 +1,4 @@
-# MACE_things
+# MACE Workflow
 
 A research repository for **MACE** machine learning force fields applied to zeolite and perovskite materials.
 
