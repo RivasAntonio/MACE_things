@@ -69,12 +69,6 @@ Machine learning model training setups:
 
 PDF documentation for MACE usage available in multiple languages.
 
-## Key Technologies
-
-- **ASE** (Atomic Simulation Environment) - molecular dynamics framework
-- **MACE** - machine learning force field calculators
-- **LAMMPS** - alternative MD engine support
-
 ### MD Ensembles Supported
 - NPT (Berendsen, Martyna-Tobias-Klein)
 - NVT (Langevin, Nose-Hoover Chain)
