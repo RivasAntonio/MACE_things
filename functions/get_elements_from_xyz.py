@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""List and count chemical elements present across structures in an XYZ file."""
+
 import sys
 from ase.io import read
 from ase.data import atomic_numbers

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""Utility helpers to load, convert, and adapt atomic structures across formats."""
+
 import os
 
 from ase import Atoms

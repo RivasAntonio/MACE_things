@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""Generate train and test structure files from simulation outputs."""
+
 import argparse
 import os
 import random

@@ -1,0 +1,62 @@
+################################################################################
+# INCAR - Dinámica Molecular NPT Langevin  |  r2SCAN + rVV10
+# Temperatura controlada con termostato Langevin
+# Presión controlada con barostato Langevin (Parrinello-Rahman)
+# Ajusta TEBEG/TEEND, NSW, POTIM, PSTRESS y gammas según tu sistema
+################################################################################
+
+# ---------- Funcional r2SCAN + rVV10 ----------
+METAGGA   = R2SCAN
+LUSE_VDW  = .TRUE.
+BPARAM    = 11.95
+CPARAM    = 0.0093
+LASPH     = .TRUE.
+LMIXTAU   = .TRUE.
+
+# ---------- Convergencia electrónica ----------
+ENCUT     = 550          # Energía de corte (eV)
+EDIFF     = 1E-5         # Criterio SCF más relajado para MD (eV)
+ALGO      = Fast
+NELM      = 60
+NELMIN    = 4
+
+# ---------- Smearing ----------
+ISMEAR    = 0
+SIGMA     = 0.05
+
+# ---------- Dinámica molecular ----------
+IBRION    = 0            # Dinámica molecular
+MDALGO    = 3            # Termostato / barostato de Langevin
+ISIF      = 3            # NPT: iones + celda (forma y volumen) se relajan
+
+NSW       = 10000        # Número de pasos MD
+POTIM     = 2.0          # Paso de tiempo (fs)
+
+TEBEG     = 300          # Temperatura inicial (K)   ← AJUSTA
+TEEND     = 300          # Temperatura final   (K)   ← AJUSTA
+
+# Coeficientes de fricción de Langevin por especie (ps⁻¹)
+# Debe haber UN valor por cada especie en el POSCAR (mismo orden que POTCAR)
+LANGEVIN_GAMMA   = 10.0 10.0   # ← AJUSTA / AÑADE valores según tus especies
+
+# Fricción de Langevin para los grados de libertad de la celda (ps⁻¹)
+LANGEVIN_GAMMA_L = 10.0        # ← AJUSTA (mismo para todos los componentes de la celda)
+
+# Masa asociada a los grados de libertad de la celda (amu·Å²)
+# Valor típico: ~10–100 amu·Å² por átomo; prueba valores entre 50 y 500
+PMASS     = 100          # ← AJUSTA
+
+# Presión externa objetivo (kBar)
+# 1 kBar = 0.1 GPa  →  p.ej. 1 atm ≈ 0.001 kBar; 1 GPa = 10 kBar
+PSTRESS   = 0.0          # ← AJUSTA (0 = 0 kBar ≈ presión ambiente)
+
+# ---------- K-points / precisión ----------
+PREC      = Normal
+LREAL     = Auto
+
+# ---------- Salida ----------
+LWAVE     = .FALSE.
+LCHARG    = .FALSE.
+NWRITE    = 0
+NBLOCK    = 1            # Escribe en XDATCAR cada NBLOCK pasos
+KBLOCK    = 10

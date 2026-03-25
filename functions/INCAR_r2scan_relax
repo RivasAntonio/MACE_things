@@ -1,0 +1,40 @@
+################################################################################
+# INCAR - Relaxación geométrica  |  r2SCAN + rVV10
+# ISIF = 3  → relaja iones + celda + volumen
+# Ajusta NSW, EDIFFG y ISIF según tus necesidades
+################################################################################
+
+# ---------- Funcional r2SCAN + rVV10 ----------
+METAGGA   = R2SCAN       # Meta-GGA r2SCAN
+LUSE_VDW  = .TRUE.       # Activar corrección vdW no-local (rVV10)
+BPARAM    = 11.95         # Parámetro b de rVV10 (valor estándar r2SCAN)
+CPARAM    = 0.0093       # Parámetro c de rVV10
+LASPH     = .TRUE.       # Componentes asféricas de densidad (obligatorio meta-GGA)
+LMIXTAU   = .TRUE.       # Mezcla de la densidad cinética τ (recomendado meta-GGA)
+
+# ---------- Convergencia electrónica ----------
+ENCUT     = 550          # Energía de corte (eV)
+EDIFF     = 1E-6         # Criterio convergencia electrónica (eV)
+ALGO      = ALL          # Algoritmo recomendado para meta-GGAs
+NELM      = 100          # Máx. iteraciones SCF
+NELMIN    = 6            # Mín. iteraciones SCF
+
+# ---------- Smearing ----------
+ISMEAR    = 0            # Gaussiano (usa -5 para semiconductores/aislantes con k-points)
+SIGMA     = 0.05         # Anchura de smearing (eV)
+
+# ---------- Relajación iónica ----------
+IBRION    = 2            # Gradiente conjugado
+ISIF      = 2            # Relajar iones + forma + volumen de celda (cambia a 2 para solo iones)
+NSW       = 300          # Máx. pasos iónicos
+EDIFFG    = -0.05        # Criterio de fuerza (eV/Å); negativo → basado en fuerzas
+POTIM     = 0.3          # Paso de tiempo iónico / factor de escala CG (Å)
+
+# ---------- K-points / precisión ----------
+PREC      = Accurate
+LREAL     = Auto         # Proyección en espacio real (recomendado celdas grandes)
+
+# ---------- Salida ----------
+LWAVE     = .FALSE.      # No escribir WAVECAR (ahorra espacio)
+LCHARG    = .FALSE.      # No escribir CHGCAR
+NWRITE    = 1

@@ -1,0 +1,51 @@
+################################################################################
+# INCAR - Dinámica Molecular NVT Langevin  |  r2SCAN + rVV10
+# Volumen fijo (ISIF=2), temperatura controlada con termostato de Langevin
+# Ajusta TEBEG/TEEND, NSW, POTIM y LANGEVIN_GAMMA según tu sistema
+################################################################################
+
+# ---------- Funcional r2SCAN + rVV10 ----------
+METAGGA   = R2SCAN
+LUSE_VDW  = .TRUE.
+BPARAM    = 11.95
+CPARAM    = 0.0093
+LASPH     = .TRUE.
+LMIXTAU   = .TRUE.
+
+# ---------- Convergencia electrónica ----------
+ENCUT     = 550          # Energía de corte (eV)
+EDIFF     = 1E-5         # Criterio SCF más relajado para MD (eV)
+ALGO      = Fast         # Algoritmo Fast suele ser suficiente en MD
+NELM      = 60
+NELMIN    = 4
+
+# ---------- Smearing ----------
+ISMEAR    = 0
+SIGMA     = 0.05
+
+# ---------- Dinámica molecular ----------
+IBRION    = 0            # Dinámica molecular
+MDALGO    = 3            # Termostato / barostato de Langevin
+ISIF      = 2            # NVT: celda FIJA, solo mueven los iones
+
+NSW       = 10000        # Número de pasos MD
+POTIM     = 2.0          # Paso de tiempo (fs)
+
+TEBEG     = 300          # Temperatura inicial (K)   ← AJUSTA
+TEEND     = 300          # Temperatura final   (K)   ← AJUSTA
+
+# Coeficientes de fricción de Langevin por especie (ps⁻¹)
+# Debe haber UN valor por cada especie en el POSCAR (mismo orden que POTCAR)
+# Ejemplo para sistema con 2 especies:
+LANGEVIN_GAMMA = 10.0 10.0    # ← AJUSTA / AÑADE valores según tus especies
+
+# ---------- K-points / precisión ----------
+PREC      = Normal       # Normal suele ser suficiente para MD
+LREAL     = Auto
+
+# ---------- Salida ----------
+LWAVE     = .FALSE.
+LCHARG    = .FALSE.
+NWRITE    = 0            # Minimiza escritura en OUTCAR
+NBLOCK    = 1            # Escribe en XDATCAR cada NBLOCK pasos
+KBLOCK    = 10           # Actualiza PCDAT/DOSCAR cada KBLOCK*NBLOCK pasos

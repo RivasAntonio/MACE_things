@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""Report atom count statistics and composition for structures in an XYZ file."""
+
 
 import argparse
 from ase.io import read

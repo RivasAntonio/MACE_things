@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""Compare reference and predicted energies, forces, and stresses from EXTXYZ data."""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from ase.io import read

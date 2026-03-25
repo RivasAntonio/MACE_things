@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""Filter EXTXYZ frames by removing configurations with large atomic forces."""
+
 import sys
 from ase.io import read, write
 import numpy as np

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""Detect and report broken or unreadable frames in EXTXYZ trajectories."""
+
 import sys
 from ase.io import iread
 from ase.io.extxyz import XYZError

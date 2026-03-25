@@ -1,3 +1,7 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""Invert the sign of stress-related properties in trajectory frames."""
+
 from ase.io import read, write
 import numpy as np
 import sys
@@ -10,31 +14,31 @@ def invert_stress(input_file, output_file):
     
     count = 0
     skipped = 0
+    keys_modified = {}  # Diccionario para contar cuántas veces se modifica cada clave
+    
     for i, at in enumerate(atoms_list):
         # Debug: mostrar qué tiene la primera estructura
         if i == 0:
             print(f"Claves en at.info: {list(at.info.keys())}")
             print(f"Claves en at.arrays: {list(at.arrays.keys())}")
         
-        # Buscar stress en diferentes lugares
+        # Buscar TODAS las claves que contengan 'stress' (case insensitive)
+        # EXCEPTO 'REF_stress' que no se modifica
         stress_found = False
         
-        if 'stress' in at.info:
-            at.info['stress'] = -1.0 * np.array(at.info['stress'])
-            stress_found = True
-        elif 'MATPES_stress' in at.info:
-            at.info['MATPES_stress'] = -1.0 * np.array(at.info['MATPES_stress'])
-            stress_found = True
-        elif 'stress' in at.arrays:
-            at.arrays['stress'] = -1.0 * at.arrays['stress']
-            stress_found = True
-        elif hasattr(at, 'get_stress'):
-            try:
-                original_stress = at.get_stress()
-                at.info['MATPES_stress'] = -1.0 * original_stress
+        # Buscar en at.info
+        for key in list(at.info.keys()):
+            if 'stress' in key.lower() and key.lower() != 'ref_stress':
+                at.info[key] = -1.0 * np.array(at.info[key])
                 stress_found = True
-            except:
-                pass
+                keys_modified[f"info['{key}']"] = keys_modified.get(f"info['{key}']", 0) + 1
+        
+        # Buscar en at.arrays
+        for key in list(at.arrays.keys()):
+            if 'stress' in key.lower() and key.lower() != 'ref_stress':
+                at.arrays[key] = -1.0 * at.arrays[key]
+                stress_found = True
+                keys_modified[f"arrays['{key}']"] = keys_modified.get(f"arrays['{key}']", 0) + 1
         
         if stress_found:
             count += 1
@@ -44,6 +48,11 @@ def invert_stress(input_file, output_file):
     print(f"\nResumen:")
     print(f"  - Se invirtió el signo del stress en {count} configuraciones.")
     print(f"  - Se omitieron {skipped} configuraciones sin stress.")
+    
+    if keys_modified:
+        print(f"\nClaves modificadas:")
+        for key, n in keys_modified.items():
+            print(f"  - {key}: {n} veces")
     
     # Guardamos el nuevo archivo
     # write_results=False evita duplicar información si ya está en info

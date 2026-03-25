@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""Visualize and compare MACE/MLFF metrics from JSONL evaluation logs."""
+
 import json
 import sys
 import numpy as np

@@ -1,0 +1,38 @@
+################################################################################
+# INCAR - Single point (cálculo de energía)  |  r2SCAN + rVV10
+# Sin relajación iónica ni de celda
+# Ajusta ENCUT, ISMEAR/SIGMA y k-points según el sistema
+################################################################################
+
+# ---------- Funcional r2SCAN + rVV10 ----------
+METAGGA   = R2SCAN       # Meta-GGA r2SCAN
+LUSE_VDW  = .TRUE.       # Activar corrección vdW no-local (rVV10)
+BPARAM    = 11.95         # Parámetro b de rVV10
+CPARAM    = 0.0093       # Parámetro c de rVV10
+LASPH     = .TRUE.       # Componentes asféricas (obligatorio meta-GGA)
+LMIXTAU   = .TRUE.       # Mezcla de τ (recomendado meta-GGA)
+
+# ---------- Convergencia electrónica ----------
+ENCUT     = 550          # Energía de corte (eV)
+EDIFF     = 1E-6         # Criterio convergencia electrónica (eV)
+ALGO      = ALL          # Algoritmo recomendado para meta-GGAs
+NELM      = 100
+NELMIN    = 6
+
+# ---------- Smearing ----------
+ISMEAR    = 0            # Gaussiano (usa -5 para semiconductores/aislantes con k-points)
+SIGMA     = 0.05         # Anchura de smearing (eV)
+
+# ---------- Sin movimiento iónico ----------
+IBRION    = -1           # Sin actualización iónica
+NSW       = 0            # Sin pasos iónicos
+ISIF      = 2            # Solo fuerzas (sin tensiones de celda)
+
+# ---------- K-points / precisión ----------
+PREC      = Accurate
+LREAL     = Auto
+
+# ---------- Salida ----------
+LWAVE     = .FALSE.
+LCHARG    = .FALSE.
+NWRITE    = 1

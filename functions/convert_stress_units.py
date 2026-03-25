@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+"""Convert stress tensor values in XYZ files from kbar to meV/A^3."""
+
 import re
 import sys
 import os.path
