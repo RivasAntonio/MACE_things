@@ -6,4 +6,4 @@ train*xyz
 validation*xyz
 test*xyz
 *.h5
-article_calculations/
+article-calculations/
