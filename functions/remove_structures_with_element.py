@@ -16,7 +16,7 @@ import sys
 from ase.io import read, write
 
 def remove_by_element(xyz_file, element):
-    atoms_list = read(xyz_file, index=":", format="extxyz")
+    atoms_list = read(xyz_file, index=":")
     total_structures = len(atoms_list)
     filtered = [atoms for atoms in atoms_list if element not in atoms.get_chemical_symbols()]
     kept_count = len(filtered)

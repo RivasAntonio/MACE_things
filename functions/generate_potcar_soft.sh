@@ -45,13 +45,24 @@ generate_potcar() {
     fi
     > "$potcar"
     for element in $elements; do
-        local pot_path="$POTCAR_DIR/$element/POTCAR"
+        local pot_element="$element"
+        case "$element" in
+            C) pot_element="C_s" ;;
+            N) pot_element="N_s" ;;
+            H) pot_element="H_s" ;;
+        esac
+
+        local pot_path="$POTCAR_DIR/$pot_element/POTCAR"
         if [[ ! -f "$pot_path" ]]; then
             echo "Error: No se encontró $pot_path"
             return 1
         fi
         if [ $VERBOSE -eq 1 ]; then
-            echo "  Añadiendo $element desde $pot_path"
+            if [ "$pot_element" != "$element" ]; then
+                echo "  Añadiendo $element como $pot_element desde $pot_path"
+            else
+                echo "  Añadiendo $element desde $pot_path"
+            fi
         fi
         cat "$pot_path" >> "$potcar"
     done
@@ -75,23 +86,22 @@ TOTAL_DIRS=0
 SUCCESSFUL_DIRS=0
 FAILED_DIRS=0
 
-# Recorrer todos los subdirectorios
-for dir in "$BASE_DIR"/*; do
-    if [[ -d "$dir" ]]; then
-        TOTAL_DIRS=$((TOTAL_DIRS+1))
-        if generate_potcar "$dir"; then
-            SUCCESSFUL_DIRS=$((SUCCESSFUL_DIRS+1))
-        else
-            FAILED_DIRS=$((FAILED_DIRS+1))
-        fi
-        if [ $VERBOSE -eq 1 ]; then
-            echo "---"
-        fi
+# Recorrer recursivamente todos los POSCAR bajo el directorio base
+while IFS= read -r -d '' poscar; do
+    dir=$(dirname "$poscar")
+    TOTAL_DIRS=$((TOTAL_DIRS+1))
+    if generate_potcar "$dir"; then
+        SUCCESSFUL_DIRS=$((SUCCESSFUL_DIRS+1))
+    else
+        FAILED_DIRS=$((FAILED_DIRS+1))
     fi
-done
+    if [ $VERBOSE -eq 1 ]; then
+        echo "---"
+    fi
+done < <(find "$BASE_DIR" -type f -name POSCAR -print0)
 
 if [ $TOTAL_DIRS -eq 0 ]; then
-    echo "Advertencia: No se encontraron subdirectorios en $BASE_DIR"
+    echo "Advertencia: No se encontraron archivos POSCAR en $BASE_DIR"
     exit 0
 fi
 
